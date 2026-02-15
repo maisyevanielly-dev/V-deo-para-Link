@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Pramin - Envie Vídeo</title>
+</head>
+<body>
+<h1>Pramin - Envie seu vídeo</h1>
+<input type="file" id="videoInput" accept="video/*">
+<button id="uploadBtn">Gerar Link</button>
+<p id="status"></p>
+<p id="link"></p>
+
+<script>
+document.getElementById('uploadBtn').addEventListener('click', () => {
+    const fileInput = document.getElementById('videoInput');
+    const status = document.getElementById('status');
+    const linkOutput = document.getElementById('link');
+
+    if (fileInput.files.length === 0) {
+        alert("Escolha um vídeo primeiro!");
+        return;
+    }
+
+    const file = fileInput.files[0];
+    status.textContent = "Upload em andamento...";
+
+    // Simulação de link
+    setTimeout(() => {
+        status.textContent = "Upload concluído!";
+        linkOutput.innerHTML = `<a href="#">Link do vídeo (simulado)</a>`;
+    }, 2000);
+});
+</script>
+</body>
+</html>
