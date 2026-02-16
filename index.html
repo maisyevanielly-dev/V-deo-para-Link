@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Pramin - Envie Vídeo</title>
+</head>
+<body>
+<h1>Pramin - Envie seu vídeo</h1>
+<input type="file" id="videoInput" accept="video/*">
+<button id="uploadBtn">Gerar Link</button>
+<p id="status"></p>
+<p id="link"></p>
+
+<script>
+const uploadBtn = document.getElementById('uploadBtn');
+const fileInput = document.getElementById('videoInput');
+const status = document.getElementById('status');
+const linkOutput = document.getElementById('link');
+
+// Coloque seu token do Dropbox aqui
+const DROPBOX_TOKEN = "sl.u.AGRgXJHpcddcfAR15psheNYqnSRobViZ9Mg71cINTO-N_zGaJIbadHBn_wepd9_X0U9jLFWbFADIgBc8ahadhwDBfs7ZxIInMyoCoVpEMjFvjmPDU4dddFumKolew3GT2yT49l1_hmjXa1ZjW_cw2QW2x5yQjHzcTXBFGYhr3k6gjinlK9irgMIkTPTwV5o-GBqbxtSM7IFczwDfbQg_BBNf9S2jfAci9H1M5g4qS6b96feaQYQbnIbRnGt7LC2SAKhKM3s8DLXjsA2VVybKXqygbyjzva_0deG-mVaBjWuehrKmqRd4Yc-RDh8w7Q2UIP-L8Hjemh00J557BDUEkpGDhfKb0F_VrFZpmDtxEcspgmSsMnnjhKGQYGCDRSC4pDbZSvqVnv2vIdNwxnWVKM3teLioIeX_zDrn7B-SulFlnwYBrBu3mmN99Kr-C2T1hcJwoDoHFxxp1cXlnHxevAUDdoEXnhzJMAhthcfhqx_-asYUsJWnwWNGn0QQAHd9Gxggh0xObu1sjyCdMAlpmq6PcKN185PhEfADZMejBorO7Hll85g6_Yd3dPf-g8jwvIt6fB97Q3r8DTjLdECUfcMR592p7AoAd-fCiCe1lNBWkKjl1nXSkC4u6MB_oDR_fHZlZgDgAuSywnJtW0uA2tJmBV9sy3WfDslHsw5306N62EzmlQr1ylyKnafAo0gOcRGHvDr-RpmGzCc6ZF4116X2ARm44owKo7MuGutCffTwGMtVemYQYzwj6ZXXNewR4KEWEOBLB59gRobNJtJSC7IirTnw8fud6MM2SaTNiccH096DGrlsmaM2yCLMNwVzRH2pP5-RSFmorMr9iopAdvTbOeFOmC2y975Jb-n0ZHh_3dsGcn-TmAXP0wmeUMt3QGsGi9h5Ri_365JJVW0yaqxNGAANQgTXziwqmt5hGGCkQZ67dqN5w3jfHx5pVitHcePxcrxYdMRqD3DNgz7IkkjPGi6rTruw9rg0mWcmHwBN3Ec3TNf_wFnzy3UJIc9gujzU22h2Mg1bmAJGZVBAvUgfBjdplcQXY1C6h8gdH2vVPVUyxI-peCZgbfTfTpmbp5dOk28Ns4P9XGlLuxntbj9GogjmSpWVKY3m-CgNcE8ezsSlwLlphm_Vfde1RWewyqrspmkZZ_8HS27dNT5EtsHHdz589iu2WGG65ixLsoNmErkrvpS7nHZ9M_IiXlmf0fqezQorUynsUtggoW6mbE-KKTVVIGEsV1hshYCzvoLnIFqfMmLd024NngRJ1ZlYqyyPRvEs8rqtL39NH0JmNhz3";
+
+uploadBtn.addEventListener('click', async () => {
+  if(fileInput.files.length === 0){
+    alert("Escolha um vídeo primeiro!");
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  status.textContent = "Upload em andamento...";
+
+  reader.onload = async function(e){
+    const base64 = e.target.result.split(',')[1];
+
+    try {
+      const response = await fetch('https://content.dropboxapi.com/2/files/upload', {
+        method: 'POST',
+        headers: {
+          "Authorization": "Bearer " + DROPBOX_TOKEN,
+          "Dropbox-API-Arg": JSON.stringify({
+            path: "/" + file.name,
+            mode: "add",
+            autorename: true,
+            mute: false
+          }),
+          "Content-Type": "application/octet-stream"
+        },
+        body: Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+      });
+
+      if(response.ok){
+        // Gerar link compartilhável
+        const linkRes = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
+          method: 'POST',
+          headers: {
+            "Authorization": "Bearer " + DROPBOX_TOKEN,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({path: "/" + file.name})
+        });
+
+        const linkData = await linkRes.json();
+        status.textContent = "Upload concluído!";
+        linkOutput.innerHTML = `<a href="${linkData.url.replace("?dl=0","?dl=1")}" target="_blank">${linkData.url.replace("?dl=0","?dl=1")}</a>`;
+      } else {
+        status.textContent = "Erro no upload";
+      }
+    } catch(err){
+      status.textContent = "Erro: " + err.message;
+    }
+  };
+
+  reader.readAsDataURL(file);
+});
+</script>
+</body>
+</html>
